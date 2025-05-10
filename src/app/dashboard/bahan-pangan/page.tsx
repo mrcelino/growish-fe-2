@@ -62,7 +62,9 @@ function Card() {
       <h2 className="font-medium">Biji-bijian</h2>
       <h2 className="font-medium">Protein: 7,5g | Kalori: 350 kcal</h2>
       <div className="flex space-x-4 justify-end mt-4 ">
-        <div className="flex items-center justify-center bg-[#007BFF] size-9 rounded-md">
+          <Link
+          href="/dashboard/bahan-pangan/1"
+          className="flex items-center justify-center bg-[#007BFF] size-9 rounded-md">
           <Image
             src="/view.png"
             alt="view icon"
@@ -70,7 +72,7 @@ function Card() {
             height={10}
             className="w-7"
           />
-        </div>
+        </Link>
       </div>
     </div>
   );

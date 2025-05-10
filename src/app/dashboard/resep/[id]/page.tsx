@@ -14,9 +14,9 @@ export default function Details() {
               <div className="flex flex-col gap-4 h-fit bg-[#A9DBA4] rounded-2xl p-4">
                 <h2 className="text-[22px] font-semibold">Informasi Utama</h2>
                 <div className="grid grid-cols-[auto_min-content_1fr] gap-4 text-lg font-medium">
-                  <div>Nama Bahan</div>
+                  <div>Nama Resep</div>
                   <div>:</div>
-                  <div>Beras</div>
+                  <div>Nasi Ayam Sehat</div>
                   <div>Kategori</div>
                   <div>:</div>
                   <div>Diet</div>

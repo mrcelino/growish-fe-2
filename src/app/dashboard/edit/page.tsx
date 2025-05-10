@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import DashboardLayout from "@/app/layout/DashboardLayout";
 import Image from "next/image";
 
-export default function TambahResepPage() {
+export default function EditResepPage() {
   const [namaResep, setNamaResep] = useState("");
   const [deskripsi, setDeskripsi] = useState("");
   const [kategori, setKategori] = useState("");
@@ -11,7 +11,7 @@ export default function TambahResepPage() {
 
   return (
     <DashboardLayout>
-      <h2 className="text-2xl font-semibold text-black mb-4">Tambah Resep</h2>
+      <h2 className="text-2xl font-semibold text-black mb-4">Edit Resep</h2>
       <div className="bg-white rounded-xl p-6 shadow-md">
         {/* Data Utama */}
         <h3 className="text-lg font-semibold mb-4">Data Utama</h3>

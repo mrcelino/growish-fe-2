@@ -14,12 +14,12 @@ export default function Home() {
 function Card() {
   return (
     <div className="flex flex-col gap-1 bg-white min-h-36 rounded-2xl shadow-md border-2 border-gray-100 p-6">
-      <h2 className="font-semibold text-xl">Beras Merah</h2>
-      <h2 className="font-medium">Bahan-bahan</h2>
-      <h2 className="font-medium">Nasi Merah 100g, Ayam Kukus</h2>
+      <h2 className="font-semibold text-xl">Nasi Ayam Sehat</h2>
+      <h2 className="font-medium text-gray-600">Bahan - bahan : </h2>
+      <h2 className="font-medium">Nasi merah 100 g, ayam kukus 100g</h2>
       <div className="flex space-x-4 justify-end mt-4 ">
         <Link
-          href="/edit"
+          href="/dashboard/edit"
           className="flex items-center justify-center bg-[#E2A713] size-9 rounded-md"
         >
           <Image
