@@ -1,5 +1,7 @@
+"use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "../context/auth";
 
 export function Navbar() {
   return (
@@ -20,13 +22,16 @@ function Info() {
   return (
     <>
       <Link href="/dashboard" className="text-4xl font-bold">
-        Labora
+        LabGizi
       </Link>
     </>
   );
 }
 
 function Menu() {
+  const auth = useAuth();
+
+  const logout = auth?.logout;
   return (
     <>
       <Link
@@ -55,9 +60,10 @@ function Menu() {
           height={50}
           className="rounded-full p-2 bg-gray-100"
         />
-        <div className="flex items-center justify-center p-2 size-12 bg-[#326D2C] rounded-2xl cursor-pointer">
+        <button
+          onClick={logout} disabled={!logout} className="flex items-center justify-center p-2 size-12 bg-[#326D2C] rounded-2xl cursor-pointer">
           <Image src="/logout.png" alt="logout icon" width={25} height={25} />
-        </div>
+        </button>
       </div>
     </>
   );
