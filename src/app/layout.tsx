@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "./context/auth";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -25,7 +26,7 @@ export default function RootLayout({
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
       </head>
       <body className={`${poppins.variable} font-sans antialiased`}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
