@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import DashboardLayout from '@/app/layout/DashboardLayout';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/app/context/auth';
+import { useRouter } from 'next/navigation';
 
 interface Material {
   quantity: number;
@@ -19,6 +20,7 @@ interface Recipe {
   name: string;
   description: string;
   category: string;
+  image_url: string | null;
   recipe_materials: Material[];
 }
 
@@ -28,7 +30,9 @@ interface RecipeStats {
 }
 
 export default function Home() {
+
   const { user } = useAuth();
+  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const [stats, setStats] = useState<RecipeStats>({
@@ -40,59 +44,99 @@ export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [materials, setMaterials] = useState([]);
 
-  useEffect(() => {
-  if (!user?.token) return;
+  const fetchData = async () => {
+    if (!user?.token) return;
 
-    const fetchData = async () => {
-      try {
-        const [recipesRes, statsRes, materialsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes`, {
-            headers: { Authorization: `Bearer ${user.token}` },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/stats`, {
-            headers: { Authorization: `Bearer ${user.token}` },
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/materials`, {
-            headers: { Authorization: `Bearer ${user.token}` },
-          }),
-        ]);
+    try {
+      const [recipesRes, statsRes, materialsRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/stats`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/materials`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }),
+      ]);
 
-        const [recipesData, statsData, materialsData] = await Promise.all([
-          recipesRes.json(),
-          statsRes.json(),
-          materialsRes.json(),
-        ]);
+      const [recipesData, statsData, materialsData] = await Promise.all([
+        recipesRes.json(),
+        statsRes.json(),
+        materialsRes.json(),
+      ]);
 
-        if (recipesRes.ok) {
-          setRecipes(recipesData.data);
-          setFilteredRecipes(recipesData.data);
-        } else console.error('Gagal fetch recipes:', recipesData.message);
-
-        if (statsRes.ok) {
-          setStats((prev) => ({
-            ...prev,
-            totalRecipes: statsData.data.totalRecipes,
-          }));
-        } else {
-          console.error('Gagal fetch stats:', statsData.message);
-        }
-
-        if (materialsRes.ok) {
-          setStats((prev) => ({
-            ...prev,
-            totalMaterials: materialsData.data.length,
-          }));
-        } else {
-          console.error('Gagal fetch materials:', materialsData.message);
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
+      if (recipesRes.ok) {
+        setRecipes(recipesData.data);
+        setFilteredRecipes(recipesData.data);
+      } else {
+        console.error('Gagal fetch recipes:', recipesData.message);
       }
-    };
 
+      if (statsRes.ok) {
+        setStats((prev) => ({
+          ...prev,
+          totalRecipes: statsData.data.totalRecipes,
+        }));
+      } else {
+        console.error('Gagal fetch stats:', statsData.message);
+      }
+
+      if (materialsRes.ok) {
+        setStats((prev) => ({
+          ...prev,
+          totalMaterials: materialsData.data.length,
+        }));
+      } else {
+        console.error('Gagal fetch materials:', materialsData.message);
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    }
+  };
+
+  const handleDeleteRecipe = async (id: string) => {
+    if (!user?.token) {
+      alert('Anda harus login untuk menghapus resep');
+      return;
+    }
+
+    if (!confirm('Apakah Anda yakin ingin menghapus resep ini?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Resep berhasil dihapus');
+        // Perbarui data resep tanpa perlu refresh halaman
+        setRecipes(prevRecipes => prevRecipes.filter(recipe => recipe.id !== id));
+        setFilteredRecipes(prevFiltered => prevFiltered.filter(recipe => recipe.id !== id));
+        // Perbarui statistik
+        setStats(prev => ({
+          ...prev,
+          totalRecipes: prev.totalRecipes - 1
+        }));
+      } else {
+        throw new Error(data.message || 'Gagal menghapus resep');
+      }
+    } catch (err) {
+      console.error('Error deleting recipe:', err);
+      alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat menghapus resep');
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [user]);
-
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -136,6 +180,7 @@ export default function Home() {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           recipes={filteredRecipes}
+          onDelete={handleDeleteRecipe}
         />
       </div>
     </DashboardLayout>
@@ -151,13 +196,20 @@ function StatCard({ title, value, className }: { title: string; value: number; c
   );
 }
 
-function Menu({ searchTerm, setSearchTerm, recipes, selectedCategory, setSelectedCategory,
+function Menu({ 
+  searchTerm, 
+  setSearchTerm, 
+  recipes, 
+  selectedCategory, 
+  setSelectedCategory,
+  onDelete,
 }: {
   searchTerm: string;
   setSearchTerm: (val: string) => void;
   recipes: Recipe[];
   selectedCategory: string;
   setSelectedCategory: (val: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const categoryOptions = ["Semua", "Diet", "Otot", "Jantung", "Diabetes"];
 
@@ -200,43 +252,90 @@ function Menu({ searchTerm, setSearchTerm, recipes, selectedCategory, setSelecte
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
         {recipes.length > 0 ? (
-          recipes.map((r) => <Card key={r.id} recipe={r} />)
+          recipes.map((r) => <Card key={r.id} recipe={r} onDelete={onDelete} />)
         ) : (
-          <p className="col-span-full text-center text-gray-500">Tidak ditemukan resep.</p>
+          <p className="col-span-full text-center text-gray-500 py-10">Tidak ditemukan resep.</p>
         )}
       </div>
     </div>
   );
 }
 
-function Card({ recipe }: { recipe: Recipe }) {
-  const ingredients = recipe.recipe_materials
-    .map((rm) => `${rm.material.name} ${rm.quantity}g`)
-    .join(', ');
+function Card({ recipe, onDelete }: { recipe: Recipe; onDelete: (id: string) => void }) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(recipe.id);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-1 bg-white min-h-36 rounded-2xl shadow-md border-2 border-gray-100 p-6">
-      <h2 className="font-semibold text-xl">{recipe.name}</h2>
-      <h2 className="font-medium text-gray-600">Bahan - bahan :</h2>
-      <h2 className="font-medium">{ingredients}</h2>
-      <div className="flex space-x-4 justify-end mt-4">
-        <Link
-          href={`/dashboard/edit/${recipe.id}`}
-          className="flex items-center justify-center bg-[#E2A713] size-9 rounded-md"
-        >
-          <Image src="/edit.svg" alt="edit icon" width={20} height={20} className="size-6 object-cover" />
-        </Link>
-        <div className="flex items-center justify-center bg-[#DC3545] size-9 rounded-md">
-          <Image src="/delete.svg" alt="delete icon" width={15} height={15} className="size-6" />
+    <div className="flex flex-col bg-white rounded-2xl shadow-md border-2 border-gray-100 overflow-hidden hover:shadow-lg transition-shadow h-full p-4">
+      {/* Recipe Image */}
+      <div className="relative h-50 w-full rounded-lg overflow-hidden">
+        {recipe.image_url ? (
+          <Image
+            src={recipe.image_url}
+            alt={recipe.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="bg-gray-200 h-full w-full flex items-center justify-center">
+            <Image
+              src="/recipe-placeholder.png"
+              alt="No image"
+              width={100}
+              height={100}
+              className="opacity-50"
+            />
+          </div>
+        )}
+      </div>
+      
+      {/* Recipe Content */}
+      <div className="p-4 flex flex-col flex-grow">
+        <h2 className="font-semibold text-xl mb-2 line-clamp-1">{recipe.name}</h2>
+        <p className="text-gray-600 text-sm mb-3 line-clamp-2">{recipe.description}</p>
+        
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-2 mt-auto pt-2">
+          {/* <Link
+            href={`/dashboard/edit/${recipe.id}`}
+            className="flex items-center justify-center bg-[#E2A713] size-8 rounded-md hover:bg-[#d49b12] transition-colors"
+            title="Edit Resep"
+          >
+            <Image src="/edit.svg" alt="edit icon" width={16} height={16} />
+          </Link>
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className={`flex items-center justify-center size-8 rounded-md transition-colors ${
+              isDeleting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#DC3545] hover:bg-[#c82333]'
+            }`}
+            title="Hapus Resep"
+          >
+            {isDeleting ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+            ) : (
+              <Image src="/delete.svg" alt="delete icon" width={14} height={14} />
+            )}
+          </button> */}
+          <Link
+            href={`/dashboard/resep/${recipe.id}`}
+            className="flex items-center justify-center bg-[#007BFF] size-8 rounded-md hover:bg-[#0069d9] transition-colors"
+            title="Lihat Detail"
+          >
+            <Image src="/view.png" alt="view icon" width={18} height={18} />
+          </Link>
         </div>
-        <Link
-          href={`/dashboard/details/${recipe.id}`}
-          className="flex items-center justify-center bg-[#007BFF] size-9 rounded-md"
-        >
-          <Image src="/view.png" alt="view icon" width={20} height={10} className="w-7" />
-        </Link>
       </div>
     </div>
   );

@@ -1,25 +1,73 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import DashboardLayout from '@/app/layout/DashboardLayout';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/auth';
 
 interface Material {
   quantity: number;
   material_id: string;
-  material: { id: string; name: string };
+  material: {
+    id: string;
+    name: string;
+    user_id: string;
+    image_url: string | null;
+    calories: number;
+    protein: number;
+    total_fat: number;
+    saturated_fat: number;
+    trans_fat: number;
+    cholesterol: number;
+    carbohydrates: number;
+    sugar: number;
+    fiber: number;
+    natrium: number;
+    amino_acid: number;
+    vitamin_d: number;
+    magnesium: number;
+    iron: number;
+    test_date: string;
+    material_category: string;
+    notes: string;
+    source: string;
+    created_at: string;
+  };
 }
 
 interface Recipe {
   id: string;
+  user_id: string;
   name: string;
+  image_url: string;
   description: string;
   category: string;
+  steps: string;
+  nutrients: {
+    iron: number;
+    fiber: number;
+    sugar: number;
+    natrium: number;
+    protein: number;
+    calories: number;
+    magnesium: number;
+    total_fat: number;
+    trans_fat: number;
+    vitamin_d: number;
+    amino_acid: number;
+    cholesterol: number;
+    carbohydrates: number;
+    saturated_fat: number;
+  };
+  created_at: string;
   recipe_materials: Material[];
 }
 
+
+
 export default function ResepSaya() {
+  
   const { user } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
@@ -32,7 +80,7 @@ export default function ResepSaya() {
 
     const fetchData = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/my-recipes`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
 
@@ -155,30 +203,94 @@ function Menu({
 }
 
 function Card({ recipe }: { recipe: Recipe }) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!user?.token) {
+      alert('Anda harus login untuk menghapus resep');
+      return;
+    }
+
+    if (!confirm('Apakah Anda yakin ingin menghapus resep ini?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/${recipe.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Resep berhasil dihapus');
+        router.refresh(); // Refresh the page to update the list
+      } else {
+        throw new Error(data.message || 'Gagal menghapus resep');
+      }
+    } catch (err) {
+      console.error('Error deleting recipe:', err);
+      alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat menghapus resep');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const ingredients = recipe.recipe_materials
     .map((rm) => `${rm.material.name} ${rm.quantity}g`)
     .join(', ');
 
   return (
-    <div className="flex flex-col gap-1 bg-white min-h-36 rounded-2xl shadow-md border-2 border-gray-100 p-6">
+    <div className="flex flex-col gap-1 bg-white min-h-36 rounded-2xl shadow-md border-2 border-gray-100 p-4">
+      <div className="flex justify-center mb-3">
+        {recipe.image_url && (
+          <Image 
+            src={recipe.image_url} 
+            alt={recipe.name} 
+            width={150} 
+            height={150} 
+            className="w-full h-32 object-cover rounded-lg"
+          />
+        )}
+      </div>
       <h2 className="font-semibold text-xl">{recipe.name}</h2>
       <h2 className="font-medium text-gray-600">Bahan - bahan :</h2>
-      <h2 className="font-medium">{ingredients}</h2>
-      <div className="flex space-x-4 justify-end mt-4">
+      <p className="font-medium text-sm line-clamp-2">{ingredients}</p>
+      
+      <div className="flex justify-end space-x-2 mt-auto pt-2">
         <Link
           href={`/dashboard/edit/${recipe.id}`}
-          className="flex items-center justify-center bg-[#E2A713] size-9 rounded-md"
+          className="flex items-center justify-center bg-[#E2A713] size-8 rounded-md hover:bg-[#d49b12] transition-colors"
+          title="Edit Resep"
         >
-          <Image src="/edit.svg" alt="edit icon" width={20} height={20} className="size-6 object-cover" />
+          <Image src="/edit.svg" alt="edit icon" width={16} height={16} />
         </Link>
-        <div className="flex items-center justify-center bg-[#DC3545] size-9 rounded-md">
-          <Image src="/delete.svg" alt="delete icon" width={15} height={15} className="size-6" />
-        </div>
-        <Link
-          href={`/dashboard/details/${recipe.id}`}
-          className="flex items-center justify-center bg-[#007BFF] size-9 rounded-md"
+        <button
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className={`flex items-center justify-center size-8 rounded-md transition-colors ${
+            isDeleting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#DC3545] hover:bg-[#c82333]'
+          }`}
+          title="Hapus Resep"
         >
-          <Image src="/view.png" alt="view icon" width={20} height={10} className="w-7" />
+          {isDeleting ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+          ) : (
+            <Image src="/delete.svg" alt="delete icon" width={14} height={14} />
+          )}
+        </button>
+        <Link
+          href={`/dashboard/resep/${recipe.id}`}
+          className="flex items-center justify-center bg-[#007BFF] size-8 rounded-md hover:bg-[#0069d9] transition-colors"
+          title="Lihat Detail"
+        >
+          <Image src="/view.png" alt="view icon" width={18} height={18} />
         </Link>
       </div>
     </div>
