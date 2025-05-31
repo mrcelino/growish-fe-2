@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   experimental: {
-    appDir: true, // Jika menggunakan App Router
+    // appDir: true, // Hapus baris ini, properti tidak valid di Next.js terbaru
   },
 };
 

@@ -12,8 +12,8 @@ interface Material {
   material: {
     id: string;
     name: string;
-    user_id: string;
-    image_url: string | null;
+    userId: string;
+    imageUrl: string | null;
     calories: number;
     protein: number;
     total_fat: number;
@@ -38,9 +38,9 @@ interface Material {
 
 interface Recipe {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
-  image_url: string;
+  imageUrl: string;
   description: string;
   category: string;
   steps: string;
@@ -61,10 +61,17 @@ interface Recipe {
     saturated_fat: number;
   };
   created_at: string;
-  recipe_materials: Material[];
+  recipeMaterials: Material[];
 }
 
-
+// Tambahkan komponen LoadingSpinner
+function LoadingSpinner() {
+  return (
+    <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+    </div>
+  );
+}
 
 export default function ResepSaya() {
   
@@ -74,13 +81,15 @@ export default function ResepSaya() {
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchTerm, setSearchTerm] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.token) return;
 
     const fetchData = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/my-recipes`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/recipes/my-recipes`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
 
@@ -134,6 +143,16 @@ export default function ResepSaya() {
           recipes={filteredRecipes}
         />
       </div>
+      {error && (
+        <div className="mb-4 p-3 rounded font-medium border text-red-600 bg-red-100 border-red-500">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 p-3 rounded font-medium border text-green-600 bg-green-100 border-green-500">
+          {success}
+        </div>
+      )}
     </DashboardLayout>
   );
 }
@@ -206,6 +225,8 @@ function Card({ recipe }: { recipe: Recipe }) {
   const { user } = useAuth();
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleDelete = async () => {
     if (!user?.token) {
@@ -218,8 +239,10 @@ function Card({ recipe }: { recipe: Recipe }) {
     }
 
     setIsDeleting(true);
+    setError(null);
+    setSuccess(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/${recipe.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/recipes/${recipe.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -229,29 +252,30 @@ function Card({ recipe }: { recipe: Recipe }) {
       const data = await res.json();
 
       if (res.ok) {
-        alert('Resep berhasil dihapus');
-        router.refresh(); // Refresh the page to update the list
+        setSuccess('Resep berhasil dihapus');
+        setTimeout(() => {
+          router.refresh();
+        }, 1000);
       } else {
         throw new Error(data.message || 'Gagal menghapus resep');
       }
     } catch (err) {
-      console.error('Error deleting recipe:', err);
-      alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat menghapus resep');
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menghapus resep');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const ingredients = recipe.recipe_materials
+  const ingredients = recipe.recipeMaterials
     .map((rm) => `${rm.material.name} ${rm.quantity}g`)
     .join(', ');
 
   return (
     <div className="flex flex-col gap-1 bg-white min-h-36 rounded-2xl shadow-md border-2 border-gray-100 p-4">
       <div className="flex justify-center mb-3">
-        {recipe.image_url && (
+        {recipe.imageUrl && (
           <Image 
-            src={recipe.image_url} 
+            src={recipe.imageUrl} 
             alt={recipe.name} 
             width={150} 
             height={150} 
@@ -293,6 +317,17 @@ function Card({ recipe }: { recipe: Recipe }) {
           <Image src="/view.png" alt="view icon" width={18} height={18} />
         </Link>
       </div>
+      {isDeleting && <LoadingSpinner />}
+      {error && (
+        <div className="mb-2 p-2 rounded font-medium border text-red-600 bg-red-100 border-red-500">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="mb-2 p-2 rounded font-medium border text-green-600 bg-green-100 border-green-500">
+          {success}
+        </div>
+      )}
     </div>
   );
 }

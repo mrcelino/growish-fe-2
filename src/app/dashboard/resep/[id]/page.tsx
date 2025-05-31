@@ -34,9 +34,9 @@ interface RecipeData {
   description: string;
   category: string;
   steps: string;
-  image_url: string | null;
+  imageUrl: string | null;
   nutrients: NutrientData;
-  recipe_materials: RecipeMaterial[];
+  recipeMaterials: RecipeMaterial[];
 }
 
 function LoadingSpinner() {
@@ -62,7 +62,7 @@ function DetailsContent({ recipeId }: { recipeId: string }) {
         setIsLoading(true);
         setError('');
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/${recipeId}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/recipes/${recipeId}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
 
@@ -151,7 +151,7 @@ function DetailsContent({ recipeId }: { recipeId: string }) {
           <div className="bg-[#A9DBA4] rounded-2xl p-6">
             <div className="font-bold text-xl mb-4">Bahan-bahan:</div>
             <ol className="list-decimal list-inside space-y-1 mb-5">
-              {recipe.recipe_materials.map((mat, index) => (
+              {recipe.recipeMaterials.map((mat, index) => (
                 <li key={index}>
                   {mat.material} - {mat.quantity}g
                 </li>
@@ -198,14 +198,14 @@ function DetailsContent({ recipeId }: { recipeId: string }) {
             <CDNPieChart data={pieChartData} />
           </div>
 
-          {recipe.image_url && (
+          {recipe.imageUrl && (
             <div className="bg-[#A9DBA4] rounded-2xl p-6 flex items-center justify-center">
               <Image 
-                src={recipe.image_url} 
+                src={recipe.imageUrl} 
                 alt={recipe.name} 
                 width={250} 
                 height={250} 
-                className="rounded-lg object-cover max-h-60"
+                className="rounded-lg object-cover h-full w-full"
               />
             </div>
           )}

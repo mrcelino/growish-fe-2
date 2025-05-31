@@ -10,7 +10,7 @@ import CDNPieChart from '@/app/components/Chart';
 interface MaterialDetail {
   id: string;
   name: string;
-  image_url: string | null;
+  imageUrl: string | null;
   material_category: string;
   calories: number;
   protein: number;
@@ -90,7 +90,7 @@ export default function DetailBahanPangan() {
         setError('');
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/materials/${id}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/materials/${id}`,
           {
             headers: {
               Authorization: `Bearer ${user.token}`,
@@ -187,13 +187,13 @@ export default function DetailBahanPangan() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 p-6">
           {/* Gambar */}
           <div className="bg-[#A9DBA4] rounded-lg p-6 flex flex-col items-center justify-center">
-            {material.image_url ? (
+            {material.imageUrl ? (
               <Image
-                src={material.image_url}
+                src={material.imageUrl}
                 alt={material.name}
-                width={250}
-                height={250}
-                className="rounded-lg object-cover max-w-full max-h-64"
+                width={300}
+                height={300}
+                className="rounded-lg object-cover w-full h-full"
               />
             ) : (
               <p>Tidak ada gambar</p>

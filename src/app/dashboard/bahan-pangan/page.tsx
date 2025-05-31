@@ -8,7 +8,7 @@ import { useAuth } from '@/app/context/auth';
 interface Material {
   id: string;
   name: string;
-  image_url: string | null;
+  imageUrl: string | null;
   calories: number;
   protein: number;
   total_fat: number;
@@ -39,7 +39,7 @@ export default function MaterialsPage() {
 
     const fetchData = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/materials`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
 
@@ -173,10 +173,10 @@ function MaterialCard({ material }: { material: Material }) {
     <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow p-6">
       {/* Material Image */}
       <div className="relative h-48 w-full bg-gray-100">
-        {material.image_url ? (
-          material.image_url.startsWith('http') ? (
+        {material.imageUrl ? (
+          material.imageUrl.startsWith('http') ? (
             <Image
-              src={material.image_url}
+              src={material.imageUrl}
               alt={material.name}
               fill
               className="object-cover rounded-lg"

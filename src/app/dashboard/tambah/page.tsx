@@ -12,6 +12,14 @@ interface Material {
   image_url?: string | null;
 }
 
+function LoadingSpinner() {
+  return (
+    <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+    </div>
+  );
+}
+
 export default function TambahResepPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -28,13 +36,15 @@ export default function TambahResepPage() {
   const [previewGambar, setPreviewGambar] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filterKategoriBahan, setFilterKategoriBahan] = useState<string>('Semua');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchMaterials = async () => {
       if (!user?.token) return;
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/materials`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         const data = await res.json();
@@ -116,6 +126,8 @@ export default function TambahResepPage() {
     }
 
     setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
 
     const formData = new FormData();
     formData.append('name', namaResep);
@@ -130,7 +142,7 @@ export default function TambahResepPage() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/recipes`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${user.token}`,
@@ -141,18 +153,27 @@ export default function TambahResepPage() {
       const data = await res.json();
 
       if (res.ok) {
-        alert('Resep berhasil ditambahkan!');
-        router.push('/dashboard');
+        setSuccess('Resep berhasil ditambahkan!');
+        setTimeout(() => router.push('/dashboard/resep'), 2000);
       } else {
         throw new Error(data.message || 'Gagal menambahkan resep');
       }
     } catch (err) {
       console.error('Gagal simpan resep:', err);
-      alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan resep');
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan resep');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Tampilkan spinner saat isSubmitting true
+  if (isSubmitting) {
+    return (
+      <DashboardLayout>
+        <LoadingSpinner />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -288,7 +309,6 @@ export default function TambahResepPage() {
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="p-3 font-medium">Nama bahan</th>
-                    <th className="p-3 font-medium">Kategori</th>
                     <th className="p-3 font-medium">Jumlah (gram)</th>
                     <th className="p-3 font-medium">Aksi</th>
                   </tr>
@@ -299,7 +319,6 @@ export default function TambahResepPage() {
                     return (
                       <tr key={i} className="border-b">
                         <td className="p-3">{bahanDetail?.name || 'Tidak ditemukan'}</td>
-                        <td className="p-3">{bahanDetail?.material_category || '-'}</td>
                         <td className="p-3">{b.jumlah}g</td>
                         <td className="p-3">
                           <button
@@ -350,6 +369,18 @@ export default function TambahResepPage() {
             </ol>
           </div>
         </div>
+
+        {/* Tampilkan pesan error/success jika ada */}
+        {error && (
+          <div className="mb-4 p-3 rounded font-medium border text-red-600 bg-red-100 border-red-500">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 rounded font-medium border text-green-600 bg-green-100 border-green-500">
+            {success}
+          </div>
+        )}
 
         <div className="mt-6 flex gap-4 justify-end">
           <button 

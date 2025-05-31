@@ -20,7 +20,7 @@ interface Recipe {
   name: string;
   description: string;
   category: string;
-  image_url: string | null;
+  imageUrl: string | null;
   recipe_materials: Material[];
 }
 
@@ -43,19 +43,21 @@ export default function Home() {
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [materials, setMaterials] = useState([]);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
 
   const fetchData = async () => {
     if (!user?.token) return;
 
     try {
       const [recipesRes, statsRes, materialsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/recipes`, {
           headers: { Authorization: `Bearer ${user.token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/stats`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/recipes/stats`, {
           headers: { Authorization: `Bearer ${user.token}` },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/materials`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/materials`, {
           headers: { Authorization: `Bearer ${user.token}` },
         }),
       ]);
@@ -106,7 +108,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recipes/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/recipes/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -168,6 +170,20 @@ export default function Home() {
         <h2 className="text-2xl font-semibold text-black mt-4">
           Selamat datang, {user?.name || 'Pengguna'}
         </h2>
+
+          {/* Alert Error */}
+          {error && (
+            <div className="text-red-600 mb-4 p-3 rounded bg-red-100 border border-red-500">
+              <p className="font-medium">{error}</p>
+            </div>
+          )}
+
+          {/* Alert Success */}
+          {success && (
+            <div className="text-green-600 mb-4 p-3 rounded bg-green-100 border border-green-500">
+              <p className="font-medium">{success}</p>
+            </div>
+          )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
           <StatCard title="Total Resep" className="bg-[#80C978]" value={stats.totalRecipes} />
@@ -279,9 +295,9 @@ function Card({ recipe, onDelete }: { recipe: Recipe; onDelete: (id: string) => 
     <div className="flex flex-col bg-white rounded-2xl shadow-md border-2 border-gray-100 overflow-hidden hover:shadow-lg transition-shadow h-full p-4">
       {/* Recipe Image */}
       <div className="relative h-50 w-full rounded-lg overflow-hidden">
-        {recipe.image_url ? (
+        {recipe.imageUrl ? (
           <Image
-            src={recipe.image_url}
+            src={recipe.imageUrl}
             alt={recipe.name}
             fill
             className="object-cover"
