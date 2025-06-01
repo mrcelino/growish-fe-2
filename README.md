@@ -1,4 +1,4 @@
-# Growish - Labora
+# Growish - LabGizi
 
 <p align="center">
   <a href="https://growish-fe-1.vercel.app/" target="_blank">
