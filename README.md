@@ -80,8 +80,8 @@ Ahli Gizi dapat menyusun resep makanan dari bahan pangan yang sudah tersedia. Fi
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/mrcelino/growish-fe-1
-cd growish-fe-1
+git clone https://github.com/mrcelino/growish-fe-2
+cd growish-fe-2
 ```
 ### 2. Instal Dependensi
 ```bash
